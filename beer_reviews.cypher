@@ -4,6 +4,11 @@
     //Download jar file from https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/4.4.0.8 
     //Place into your $NEO4J_HOME/plugins folder.
 
+//  ▬▬▬▬▬▬ Adding beer_reviews.csv to project from VM ▬▬▬▬▬▬ 
+dowload file from https://www.kaggle.com/datasets/rdoume/beerreviews
+use pscp to load file on 10.8.2.35 with user:user0
+change directory file to : file:/var/lib/neo4j/import/beer_reviews.csv
+
 
 //  ▬▬▬▬▬▬ Reviews ▬▬▬▬▬▬
     // Creating the table
@@ -31,15 +36,15 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     // Creating nodes for the graph
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH
-        toIntegerOrNull(row.brewery_id) as brewery_id,
-        toIntegerOrNull(row.beer_beerid) as beer_beerid,
-        toIntegerOrNull(row.review_palate) as review_palate,
-        toStringOrNull(row.review_profilename) as review_profilename,
-        toIntegerOrNull(row.review_appearance) as review_appearance,
-        toIntegerOrNull(row.review_aroma) as review_aroma,
-        toIntegerOrNull(row.review_overall) as review_overall,
-        toIntegerOrNull(row.review_taste) as review_taste
-    WHERE brewery_id <25 and review_profilename is not null
+        toInteger(row.brewery_id) as brewery_id,
+        toInteger(row.beer_beerid) as beer_beerid,
+        toInteger(row.review_palate) as review_palate,
+        toString(row.review_profilename) as review_profilename,
+        toInteger(row.review_appearance) as review_appearance,
+        toInteger(row.review_aroma) as review_aroma,
+        toInteger(row.review_overall) as review_overall,
+        toInteger(row.review_taste) as review_taste
+    WHERE brewery_id <2 and review_profilename is not null
     MERGE (r:Reviews {brewery_id: brewery_id, beer_beerid: beer_beerid, review_profilename: review_profilename})
     SET 
         r.brewery_id = brewery_id,
@@ -70,25 +75,15 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
 
     // Creating nodes for the graph
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
-                          WITH
-                                toString(row.review_profilename) as review_profilename
-                          MERGE (r:Reviewer {review_profilename: review_profilename})
-                              SET
-                                  r.review_profilename = review_profilename
-                          RETURN COUNT(r);
-
-//
-WITH (
-        LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
-        WITH
-            toStringOrNull(row.review_profilename) as review_profilename
-        RETURN 
-            DISTINCT review_profilename 
-    ) as reviewer
+    WITH
+        toString(row.review_profilename) as review_profilename
+    WHERE review_profilename is not null
     MERGE (r:Reviewer {review_profilename: review_profilename})
-    SET 
-        r.review_profilename = review_profilename
-RETURN COUNT(r)
+        SET
+            r.review_profilename = review_profilename
+    RETURN COUNT(r);
+
+
 
 
 
@@ -115,13 +110,13 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
 
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH
-        toIntegerOrNull(row.brewery_id) as brewery_id,
-        toIntegerOrNull(row.beer_beerid) as beer_beerid,
-        toStringOrNull(row.brewery_name) as brewery_name,
-        toStringOrNull(row.beer_name) as beer_name,
-        toStringOrNull(row.beer_style) as beer_style,
-        toIntegerOrNull(row.beer_abv) as beer_abv
-    WHERE brewery_id < 25 /* ►filtre pour faire nos test◄*/ 
+        toInteger(row.brewery_id) as brewery_id,
+        toInteger(row.beer_beerid) as beer_beerid,
+        toString(row.brewery_name) as brewery_name,
+        toString(row.beer_name) as beer_name,
+        toString(row.beer_style) as beer_style,
+        toInteger(row.beer_abv) as beer_abv
+    WHERE brewery_id < 25
     MERGE (b:Beers {brewery_id: brewery_id, beer_beerid:beer_beerid})
     SET 
         b.brewery_id = brewery_id,
