@@ -1,3 +1,9 @@
+//  ▬▬▬▬▬▬ Adding apoc procedures ▬▬▬▬▬▬
+    // To check neo4j version :
+    call dbms.components() yield name, versions, edition unwind versions as version return name, version, edition;
+    //Download jar file from https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/4.4.0.8 
+    //Place into your $NEO4J_HOME/plugins folder.
+
 
 //  ▬▬▬▬▬▬ Reviews ▬▬▬▬▬▬
     // Creating the table
@@ -152,11 +158,11 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
 // Creating relations between Review and Reviewer:
 
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
-             WITH toInteger(row.brewery_id) AS brewery_id, toInteger(row.beer_beerid) AS beer_beerid, toString(row.review_profilename) AS review_profilename
-             MATCH (p:Reviewer {review_profilename: review_profilename})
-             MATCH (o:Reviews {review_profilename: review_profilename, brewery_id: brewery_id, beer_beerid: beer_beerid})
-             MERGE (o)-[rel:did_a_review {review_profilename: review_profilename}]->(p)
-             RETURN count(rel);
+    WITH toInteger(row.brewery_id) AS brewery_id, toInteger(row.beer_beerid) AS beer_beerid, toString(row.review_profilename) AS review_profilename
+    MATCH (p:Reviewer {review_profilename: review_profilename})
+    MATCH (o:Reviews {review_profilename: review_profilename, brewery_id: brewery_id, beer_beerid: beer_beerid})
+    MERGE (o)-[rel:did_a_review {review_profilename: review_profilename}]->(p)
+    RETURN count(rel);
 
 
 // Creating relations between Reviews and Beers:
