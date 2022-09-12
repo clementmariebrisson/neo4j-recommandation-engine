@@ -10,6 +10,17 @@ use pscp to load file on 10.8.2.35 with user:user0
 change directory file to : file:/var/lib/neo4j/import/beer_reviews.csv
 
 
+// NEO4J Memory Configuration :
+cd /etc/neo4j
+neo4j-admin memrec --memory=4G
+"""
+ # Based on the above, the following memory settings are recommended:
+    dbms.memory.heap.initial_size=2g
+    dbms.memory.heap.max_size=2g
+    dbms.memory.pagecache.size=512m
+"""
+// → modification of neo4j.conf
+
 //  ▬▬▬▬▬▬ Reviews ▬▬▬▬▬▬
     // Creating the table
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
@@ -44,7 +55,7 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
         toInteger(row.review_aroma) as review_aroma,
         toInteger(row.review_overall) as review_overall,
         toInteger(row.review_taste) as review_taste
-    WHERE brewery_id <2 and review_profilename is not null
+    WHERE brewery_id >=24 and brewery_id<26 and review_profilename is not null
     MERGE (r:Reviews {brewery_id: brewery_id, beer_beerid: beer_beerid, review_profilename: review_profilename})
     SET 
         r.brewery_id = brewery_id,
@@ -55,7 +66,6 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
         r.review_aroma = review_aroma,
         r.review_overall = review_overall,
         r.review_taste = review_taste
-
     RETURN 
         count(r);
 
@@ -77,14 +87,14 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH
         toString(row.review_profilename) as review_profilename
-    WHERE review_profilename is not null
+    WHERE review_profilename is not null and substring(toLower(review_profilename), 1, 1) in ['a', 'b']
     MERGE (r:Reviewer {review_profilename: review_profilename})
         SET
             r.review_profilename = review_profilename
     RETURN COUNT(r);
 
 
-
+//['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm']
 
 
 // ▬▬▬▬▬▬ Beers and Breweries ▬▬▬▬▬▬
@@ -162,6 +172,7 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
 
 // Creating relations between Reviews and Beers:
 // ►►► OK
+USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH toInteger(row.brewery_id) AS brewery_id, toInteger(row.beer_beerid) AS beer_beerid, toString(row.review_profilename) AS review_profilename
     MATCH (p:Reviews {review_profilename: review_profilename})
