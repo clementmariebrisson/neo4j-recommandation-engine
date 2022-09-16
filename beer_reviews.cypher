@@ -1,16 +1,24 @@
-//  ▬▬▬▬▬▬ Adding apoc procedures ▬▬▬▬▬▬
+//  ◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘ NEO4J CONFIGURATION ◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘
+//  I ▬▬▬▬▬▬ Adding apoc procedures ▬▬▬▬▬▬
     // To check neo4j version :
     call dbms.components() yield name, versions, edition unwind versions as version return name, version, edition;
-    //Download jar file from https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/4.4.0.8 
-    //Place into your $NEO4J_HOME/plugins folder.
+    """
+     If your NEO4J version is  4.1.X then download any 4.1.X apoc package
+     Download jar file from https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/tag/4.1.0.12 
+     Place into your $NEO4J_HOME/plugins folder. ubuntu : sudo mv /home/user0/apoc-4.1.0.12-all.jar /var/lib/neo4j/plugins/apoc-4.1.0.12-all.jar
+     restart NEO4J :  sudo systemctl restart neo4j.service 
+     Check if apoc is correctly installed : 
+        1. Open NEO4J Desktop 
+        2. execute following command : call apoc.help('apoc')
+    """
 
-//  ▬▬▬▬▬▬ Adding beer_reviews.csv to project from VM ▬▬▬▬▬▬ 
+//  II ▬▬▬▬▬▬ Adding beer_reviews.csv to project from VM ▬▬▬▬▬▬ 
 dowload file from https://www.kaggle.com/datasets/rdoume/beerreviews
 use pscp to load file on 10.8.2.35 with user:user0
 change directory file to : file:/var/lib/neo4j/import/beer_reviews.csv
 
 
-// NEO4J Memory Configuration :
+//  III  ▬▬▬▬▬▬ NEO4J Memory Configuration ▬▬▬▬▬▬
 cd /etc/neo4j
 neo4j-admin memrec --memory=4G
 """
@@ -21,7 +29,8 @@ neo4j-admin memrec --memory=4G
 """
 // → modification of neo4j.conf
 
-//  ▬▬▬▬▬▬ Reviews ▬▬▬▬▬▬
+//  ◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘ NODES CONFIGURATION ◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘ 
+//  I. ▬▬▬▬▬▬ Reviews ▬▬▬▬▬▬
     // Creating the table
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH
@@ -74,7 +83,7 @@ MATCH (n)
 RETURN n
 
 
-//  ▬▬▬▬▬▬ REVIEWER ▬▬▬▬▬▬
+//  II. ▬▬▬▬▬▬ REVIEWER ▬▬▬▬▬▬
     // Creating the table
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH
@@ -86,19 +95,17 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     // Creating nodes for the graph
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH
+        toInteger(row.brewery_id) as brewery_id,
         toString(row.review_profilename) as review_profilename
-    WHERE review_profilename is not null and substring(toLower(review_profilename), 1, 1) in ['a', 'b']
+    WHERE review_profilename is not null and brewery_id < 25 // filtering on brewery id 
     MERGE (r:Reviewer {review_profilename: review_profilename})
         SET
             r.review_profilename = review_profilename
     RETURN COUNT(r);
 
 
-//['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm']
 
-
-// ▬▬▬▬▬▬ Beers and Breweries ▬▬▬▬▬▬
-
+// III. ▬▬▬▬▬▬ Beers and Breweries ▬▬▬▬▬▬
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH
         toIntegerOrNull(row.brewery_id) as brewery_id,
@@ -115,8 +122,6 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
         beer_style,
         beer_abv
     LIMIT 5;
- 
-
 
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH
@@ -138,15 +143,10 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     RETURN 
         count(b);
 
+//  ◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘ RELATIONS CONFIGURATION ◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘◘
 
-
-
-
-
-
-
+"""
 // Creating relations between Beers and reviews:
-
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
 
              WITH toInteger(row.brewery_id) AS brewery_id, toInteger(row.beer_beerid) AS beer_beerid, toString(row.review_profilename) AS review_profilename
@@ -154,14 +154,10 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
              MATCH (o:Beers {brewery_id: brewery_id, beer_beerid: beer_beerid})
              MERGE (o)-[rel:CONTAINS {review_profilename: review_profilename}]->(p)
              RETURN count(rel);
+"""
 
-
-####################################################################################################################################
-############################################################## A TESTER ############################################################
-####################################################################################################################################
-
-// Creating relations between Review and Reviewer:
-
+// I. ▬▬▬▬▬▬  Creating relations between Review and Reviewer ▬▬▬▬▬▬
+USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH toInteger(row.brewery_id) AS brewery_id, toInteger(row.beer_beerid) AS beer_beerid, toString(row.review_profilename) AS review_profilename
     MATCH (p:Reviewer {review_profilename: review_profilename})
@@ -170,12 +166,19 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     RETURN count(rel);
 
 
-// Creating relations between Reviews and Beers:
-// ►►► OK
+// II. ▬▬▬▬▬▬  Creating relations between Reviews and Beers ▬▬▬▬▬▬
 USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
     WITH toInteger(row.brewery_id) AS brewery_id, toInteger(row.beer_beerid) AS beer_beerid, toString(row.review_profilename) AS review_profilename
-    MATCH (p:Reviews {review_profilename: review_profilename})
+    MATCH (p:Reviews {brewery_id: brewery_id, beer_beerid: beer_beerid, review_profilename: review_profilename})
     MATCH (o:Beers {brewery_id: brewery_id, beer_beerid: beer_beerid})
-    MERGE (o)-[rel:reviewed {review_profilename: review_profilename}]->(p)
+    MERGE (o)-[rel:reviewed {brewery_id: brewery_id, beer_beerid: beer_beerid, review_profilename: review_profilename}]->(p)
     RETURN count(rel);
+
+
+
+// ▬▬▬▬▬▬  Displaying all relations and nodes ▬▬▬▬▬▬
+MATCH
+     p=()-[r:did_a_review]->() , 
+     q=()-[s:reviewed]->()
+RETURN p,q  
