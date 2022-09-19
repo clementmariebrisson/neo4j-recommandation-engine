@@ -19,7 +19,7 @@ change directory file to : file:/var/lib/neo4j/import/beer_reviews.csv
 
 
 //  III  ▬▬▬▬▬▬ NEO4J Memory Configuration ▬▬▬▬▬▬
-cd /etc/neo4j
+cd/etc/neo4j
 neo4j-admin memrec --memory=4G
 """
  # Based on the above, the following memory settings are recommended:
