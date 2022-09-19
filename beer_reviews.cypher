@@ -178,7 +178,25 @@ LOAD CSV WITH HEADERS FROM 'file:///beer_reviews.csv' AS row
 
 
 // ▬▬▬▬▬▬  Displaying all relations and nodes ▬▬▬▬▬▬
+    // Initial limit of displayed nodes is 300. To change it, run this command :
+:config initialNodeDisplay: 1000
+
+    // Command to display all nodes from all relations
 MATCH
      p=()-[r:did_a_review]->() , 
      q=()-[s:reviewed]->()
 RETURN p,q  
+LIMIT 500
+
+    // All reviews from review_profilename: "philbertk" 
+MATCH p=(m:Reviews {review_profilename:"philbertk"})<-[:reviewed]-(beer_name)
+RETURN beer_name;
+
+    //All beers and reviews done by "philbertk"
+MATCH q=()-[s:reviewed]-({review_profilename:"philbertk"}),
+     p=()-[t:did_a_review]-({review_profilename:"philbertk"})
+RETURN p,q
+
+    // All reviews from 'Widmer Hefeweizen' beer :
+MATCH q=()-[s:reviewed]-({beer_name: "Widmer Hefeweizen"})
+RETURN q
