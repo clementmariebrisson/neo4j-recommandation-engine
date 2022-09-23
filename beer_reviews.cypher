@@ -200,3 +200,9 @@ RETURN p,q
     // All reviews from 'Widmer Hefeweizen' beer :
 MATCH q=()-[s:reviewed]-({beer_name: "Widmer Hefeweizen"})
 RETURN q
+
+
+    // Similar content : →→ NOT WORKING ←←
+//MATCH (b:Beers {beer_name: "Widmer Hefeweizen"})<-[:reviewed]-(u:review_profilename)-[:reviewed]->(rec:Beers)
+//RETURN rec.beer_name AS recommendation, COUNT(*) AS usersWhoAlsoLiked
+//ORDER BY usersWhoAlsoLiked DESC LIMIT 25
