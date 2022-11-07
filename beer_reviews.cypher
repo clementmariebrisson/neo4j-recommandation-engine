@@ -201,8 +201,22 @@ RETURN p,q
 MATCH q=()-[s:reviewed]-({beer_name: "Widmer Hefeweizen"})
 RETURN q
 
+    // Displaying most reviewed beers :
+MATCH p=(m:Reviews)<-[:reviewed]-(b)
+RETURN b.beer_name, count(m) as count
+order by count desc;
 
-    // Similar content : →→ NOT WORKING ←←
-//MATCH (b:Beers {beer_name: "Widmer Hefeweizen"})<-[:reviewed]-(u:review_profilename)-[:reviewed]->(rec:Beers)
-//RETURN rec.beer_name AS recommendation, COUNT(*) AS usersWhoAlsoLiked
-//ORDER BY usersWhoAlsoLiked DESC LIMIT 25
+
+//▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼ RECOMMANDATIONS ▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼
+ 
+//Displaying 5 most similar beers to "Widmer Hefeweizen" according to the overall review:
+    //selecting Reviewers who did a Review which reviewed the Beer called "Widmer Hefeweizen"
+MATCH (a:Beers {beer_name: "Widmer Hefeweizen"})-[:reviewed]->(b:Reviews)-[:did_a_review]->(c:Reviewer)
+    //selecting Beers being reviewed by the profilenames who also reviewed "Widmer Hefeweizen"
+MATCH (c)-[:did_a_review]-(e:Reviews)-[:reviewed]-(h:Beers)
+    //We only keep profilenames who rated our beer at min 4
+WHERE b.review_overall>=4
+RETURN h.beer_name as similar_beers,  count(e) AS number_of_reviews
+ORDER BY number_of_reviews DESC
+SKIP 1 //we skip first row as it is the beer we are comparing
+LIMIT 5
